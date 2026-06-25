@@ -1,0 +1,9 @@
+@import '../node_modules/@economic/taco/dist/taco.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: #1C1C1C; line-height: 20px; height: 100vh; overflow: hidden; }
+#root { height: 100vh; overflow: hidden; }

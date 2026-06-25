@@ -1,0 +1,191 @@
+/* Shared drawer-motion timing — keeps the Eva left drawer, the SideNav
+   collapse/expand, and the .main canvas reflow moving as one synchronized
+   transition (same duration + easing) so they don't visibly collide. */
+:root {
+  --drawer-dur: 0.28s;
+  --drawer-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Top navigation */
+.top-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; background: #29283E; flex-shrink: 0; }
+.top-nav-left { display: flex; align-items: center; gap: 8px; padding-left: 28px; }
+.top-nav-logo { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+.top-nav-logo img { width: 28px; height: 28px; }
+.top-nav-menu { display: flex; align-items: center; gap: 4px; }
+.top-nav-item { padding: 8px 12px; color: #fff; font-size: 14px; border-radius: 4px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.top-nav-item:hover { background: rgba(255,255,255,0.08); }
+.top-nav-item.active { background: rgba(255,255,255,0.08); }
+.top-nav-right { display: flex; align-items: center; gap: 16px; padding-right: 16px; }
+.top-nav-icons { display: flex; align-items: center; gap: 4px; }
+.top-nav-icon-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; color: #fff; border: none; background: transparent; border-radius: 32px; cursor: pointer; padding: 6px; flex-shrink: 0; }
+.top-nav-icon-btn:hover { background: rgba(255,255,255,0.12); }
+.top-nav-icon-btn.green { background: #08AE87; color: #fff; }
+.top-nav-icon-btn.green:hover { background: #079b79; }
+.top-nav-icon-btn.amber { background: #E89C2E; color: #fff; }
+.top-nav-icon-btn.amber:hover { background: #d48d26; }
+.top-nav-user { display: flex; align-items: center; gap: 8px; color: #fff; cursor: pointer; padding: 4px 8px; border-radius: 4px; flex: 1; }
+.top-nav-user:hover { background: rgba(255,255,255,0.08); }
+.top-nav-user-avatar { width: 36px; height: 36px; border-radius: 18px; flex-shrink: 0; background: #999; }
+.top-nav-user-info { flex: 1; min-width: 0; color: #fff; }
+.top-nav-user-info .name { font-size: 14px; line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-nav-user-info .id { font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-nav-user-chevron { flex-shrink: 0; color: #fff; }
+
+/* Side navigation */
+.page-body { display: flex; flex: 1; min-height: 0; position: relative; }
+.side-nav-wrapper { width: 256px; flex-shrink: 0; display: flex; border-right: 1px solid #eee; transition: width var(--drawer-dur) var(--drawer-ease); overflow: hidden; position: relative; z-index: 50; }
+.side-nav-wrapper.collapsed { width: 40px; border-right: 1px solid #eee; cursor: pointer; overflow: visible; background: #fafafa; }
+.side-nav-wrapper.collapsed:hover { background: #F6F6F6; }
+.side-nav { width: 256px; background: #fff; overflow-y: auto; flex: 1; padding: 8px 0; }
+.side-nav-wrapper.collapsed .side-nav { display: none; }
+.side-nav-collapsed-indicator { display: none; width: 100%; height: 100%; align-items: center; justify-content: center; }
+.side-nav-wrapper.collapsed .side-nav-collapsed-indicator { display: flex; }
+.side-nav-collapsed-indicator svg { width: 16px; height: 16px; color: #595959; }
+.side-nav-hover-overlay { display: none; position: absolute; top: 0; left: 40px; width: 256px; height: 100%; background: #fff; z-index: 100; box-shadow: 4px 0 12px rgba(0,0,0,0.1); overflow-y: auto; padding: 8px 0; border-right: 1px solid #eee; }
+.side-nav-hover-overlay.visible { display: block; }
+.side-nav-group { padding: 4px 0; }
+.side-nav-group-title { padding: 8px 16px; font-size: 14px; font-weight: 700; color: #1C1C1C; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.side-nav-group-title::before { content: "\25BE"; font-size: 10px; color: #595959; }
+.side-nav-item { padding: 6px 16px 6px 28px; font-size: 14px; color: #1C1C1C; cursor: pointer; display: flex; align-items: center; justify-content: space-between; text-decoration: none; }
+.side-nav-item:hover { background: #f5f5f5; }
+.side-nav-item.active { background: #E8F0FE; }
+.side-nav-badge { font-size: 14px; color: #595959; }
+
+/* Content area */
+.content-area { display: flex; flex: 1; min-width: 0; overflow: hidden; }
+.app-wrapper { display: flex; flex-direction: column; height: 100vh; }
+.main { flex: 1; min-width: 0; overflow: hidden; transition: flex var(--drawer-dur) var(--drawer-ease); display: flex; flex-direction: column; }
+.main-inner { padding: 16px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* Top bar */
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-shrink: 0; gap: 24px; }
+.top-bar h1 { font-size: 24px; font-weight: 400; line-height: 32px; }
+.top-bar-right { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.balance-cards { display: flex; gap: 16px; }
+.balance-card { min-width: 120px; }
+.balance-card .label { font-size: 12px; color: #595959; }
+.balance-card .value { font-size: 16px; font-weight: 500; }
+
+/* Action buttons (inside Table3 toolbarLeft) */
+.action-buttons { display: flex; gap: 8px; }
+
+/* Hide search in type dropdown — Select2 renders popover in a portal so we target it globally for small option lists */
+[data-taco='listbox2'] [data-taco='search-input'],
+[data-taco='listbox2'] [data-taco='search-input2'],
+[data-taco='listbox2'] input[type='search'] { display: none; }
+
+/* Table3 wrapper */
+.table3-wrapper { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+.table3-wrapper [data-taco='table2'] { flex: 1; min-height: 0; border: 1px solid #EBEBEB; border-radius: 4px; }
+.table3-wrapper td [data-taco='cell-renderer'] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table3-wrapper td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.table3-wrapper tfoot td { overflow: visible; text-overflow: unset; }
+[data-taco="table-footer-summary"] { overflow: visible !important; white-space: nowrap !important; text-overflow: unset !important; }
+.konto-link { color: #4573D2; text-decoration: none; }
+.konto-link:hover { text-decoration: underline; }
+
+/* Sidebar */
+/* Right-drawer content now lives inside taco <Drawer variant="embedded">;
+   these style the content hosted in Drawer.Content (chassis/resize/close = taco). */
+.sidebar-inner { width: 100%; height: 100%; display: flex; flex-direction: column; }
+.sidebar-header { background: #fff; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sidebar-title { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px; }
+.sidebar-title h2 { font-size: 24px; font-weight: 400; line-height: 32px; margin: 0; }
+.sidebar-header [data-taco="tabs"] { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sidebar-header [data-taco="tabs"] [role="tablist"] { padding: 0 16px; flex-shrink: 0; margin-bottom: 0; }
+/* Show every tab trigger instead of collapsing the overflow into taco's
+   "N More" menu. When the tabs are wider than the drawer, scroll the tab bar
+   horizontally with no visible scrollbar (instead of wrapping or a More menu). */
+.sidebar-header [data-taco="tabs"] [role="tablist"] > div {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.sidebar-header [data-taco="tabs"] [role="tablist"] > div::-webkit-scrollbar { display: none; }
+.sidebar-header [data-taco="tabs"] [role="tablist"] [role="tab"] { visibility: visible !important; pointer-events: auto !important; order: 0 !important; flex: none; }
+.sidebar-header [data-taco="tabs"] [role="tablist"] button:not([role="tab"]) { display: none !important; }
+.sidebar-header [data-taco="tabs"] [role="tab"][aria-selected="true"] > span:last-child { display: flex !important; height: 3px !important; }
+.sidebar-header [data-taco="tabs"] [role="tabpanel"] { overflow: auto; position: relative; display: none; }
+.sidebar-header [data-taco="tabs"] [role="tabpanel"][hidden] { display: none !important; }
+.sidebar-header [data-taco="tabs"] [role="tabpanel"]:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sidebar-body { position: relative; }
+
+/* Document tab */
+.doc-content { background: #F6F6F6; display: flex; flex-direction: column; }
+.doc-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; z-index: 10; background: #F6F6F6; flex-shrink: 0; }
+.doc-scroll { flex: 1; overflow-y: auto; padding: 0 16px 16px; }
+.doc-toolbar-left { display: flex; gap: 8px; }
+.doc-toolbar-right { display: flex; gap: 8px; }
+.scaled-page-container { position: relative; overflow: hidden; }
+.invoice-preview { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 48px 40px; position: relative; overflow: hidden; box-sizing: border-box; width: 595px; min-height: 842px; font-size: 14px; }
+.invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+.invoice-company { font-size: 20px; font-weight: 500; }
+.invoice-logo { display: flex; gap: 6px; align-items: center; }
+.invoice-logo span { width: 20px; height: 24px; border-radius: 3px; display: inline-block; }
+.invoice-logo .circle { border-radius: 50%; width: 22px; height: 22px; }
+.invoice-logo .diamond { width: 18px; height: 18px; transform: rotate(45deg); border-radius: 2px; }
+.invoice-logo .tall { width: 12px; height: 26px; border-radius: 5px; }
+.invoice-logo .wide { width: 26px; height: 12px; border-radius: 5px; }
+.invoice-logo .triangle { width: 0; height: 0; border-left: 11px solid transparent; border-right: 11px solid transparent; border-bottom: 20px solid; background: none !important; }
+.invoice-logo .hex { width: 20px; height: 20px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+.invoice-meta { font-size: 14px; color: #595959; margin-bottom: 20px; }
+.invoice-title { text-align: center; font-size: 22px; font-weight: 500; letter-spacing: 3px; margin-bottom: 20px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 10px 0; }
+.invoice-table { width: 100%; font-size: 14px; margin-bottom: 24px; border-collapse: collapse; }
+.invoice-table th, .invoice-table td { padding: 6px 10px; border-bottom: 1px solid #eee; text-align: left; }
+.invoice-table th { font-weight: 400; color: #595959; }
+.invoice-totals { text-align: right; font-size: 15px; margin-bottom: 24px; }
+.invoice-totals .total-line { display: flex; justify-content: flex-end; gap: 32px; padding: 3px 0; }
+.invoice-totals .total-final { font-weight: 700; border-top: 1px solid #1C1C1C; padding-top: 6px; }
+.invoice-footer { font-size: 13px; color: #595959; }
+.draft-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 80px; font-weight: 700; color: rgba(0,0,0,0.06); letter-spacing: 14px; pointer-events: none; }
+
+/* Document pagination */
+.doc-pagination { border-top: 1px solid #DDD; background: #fff; padding: 8px 16px; display: flex; justify-content: center; flex-shrink: 0; }
+.doc-pagination [data-taco="pagination"] > span:first-child { display: none; }
+.doc-pagination [data-taco="pagination"] > [data-taco="select2"] { display: none; }
+
+/* Document empty state */
+.doc-content-empty { padding: 16px !important; transition: none; display: flex; flex-direction: column; }
+.doc-content-empty:hover { padding-top: 16px !important; }
+.doc-empty-state { display: flex; flex-direction: column; flex: 1; }
+.doc-dropzone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border: 2px dashed #A8C5F0; border-radius: 8px; background: #FAFAFA; padding: 32px; }
+.doc-dropzone-icon { font-size: 32px; color: #999; margin-bottom: 4px; }
+.doc-dropzone-title { font-size: 14px; font-weight: 600; color: #1C1C1C; margin: 0; }
+.doc-attach-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: #595959; font-size: 14px; cursor: pointer; padding: 4px 0; }
+.doc-attach-link:hover { color: #1C1C1C; }
+.doc-request-area { padding: 20px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.doc-no-requests { font-size: 14px; font-weight: 600; color: #1C1C1C; margin: 0; }
+.doc-request-sent { font-size: 14px; color: #1C1C1C; margin: 0; }
+.doc-request-date { font-size: 13px; color: #595959; margin: 0; }
+
+/* Log tab */
+.log-content { padding: 16px; overflow-y: auto; }
+.log-entry { position: relative; display: flex; gap: 9px; }
+.timeline { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 24px; }
+.timeline-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #595959; }
+.timeline-icon img { width: 20px; height: 20px; object-fit: contain; }
+.timeline-spacer { flex: 1; }
+.log-body { flex: 1; padding-bottom: 16px; min-width: 0; position: relative; }
+.log-date { font-weight: 700; color: #595959; font-size: 14px; margin-bottom: 9px; line-height: 25px; }
+.log-card-wrapper { position: relative; }
+.log-card-wrapper::before { content: ''; position: absolute; left: -22px; top: 0; bottom: 0; width: 1.5px; background: #595959; border-radius: 1px; }
+.log-card-wrapper [data-taco="list"] { border: 1px solid #DDD; border-radius: 10px; overflow: hidden; }
+.detail-table { width: 100%; background: #FAFAFA; border: 1px solid #DDD; border-radius: 8px; overflow: hidden; }
+.detail-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #DDD; font-size: 14px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: #1C1C1C; }
+.detail-value { color: #595959; text-align: right; }
+.detail-value.link { color: #4573D2; cursor: pointer; }
+.detail-value.link:hover { text-decoration: underline; }
+
+/* Log back header */
+.log-back-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; position: sticky; top: -16px; z-index: 10; background: #fff; margin: -16px -16px 16px -16px; border-bottom: 1px solid #EBEBEB; }
+.log-back-title { font-size: 14px; font-weight: 700; color: #1C1C1C; }
+
+/* Log drill-down body */
+.log-drilldown-body { padding: 0; }
+
+/* Hidden helper */
+.hidden { display: none !important; }
