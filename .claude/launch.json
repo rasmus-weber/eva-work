@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "eva-journal",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5182"],
+      "port": 5182,
+      "cwd": "prototypes/eva-journal-prototype"
+    }
+  ]
+}
