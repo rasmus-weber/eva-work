@@ -495,7 +495,7 @@ export default function App() {
             <div className="main-inner">
               <div className="top-bar">
                 <div className="top-bar-title">
-                  <h1>Daglig</h1>
+                  <h1>Daglig kassekladde</h1>
                 </div>
                 <div className="top-bar-right">
                   <div className="balance-cards">
