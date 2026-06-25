@@ -29,7 +29,9 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: prototypes/eva-journal-prototype/package-lock.json
-      - run: npm ci
+      # Use `npm install` (not `npm ci`): the lockfile inherited from the original
+      # prototype has minor drift that older npm versions reject under `ci`.
+      - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
