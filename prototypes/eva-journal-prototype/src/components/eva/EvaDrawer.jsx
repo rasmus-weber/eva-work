@@ -1,6 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
-import { Button, IconButton, Icon, Tag, Tabs } from '@economic/taco'
+import { Button, IconButton, Icon, Tag, Tabs, Checkbox } from '@economic/taco'
 import { EvaLogo } from './EvaLogo'
+import { vatAnomalySeed, vatAnomalySeedLarge } from '../../data'
+
+const VAT_ANOMALIES = vatAnomalySeed
+// At or below this many anomalies the chat shows the inline list; above it the
+// chat shows an artefact card and the changes are reviewed in the artefact.
+const VAT_INLINE_MAX = 3
+
+const buildVatArtifact = (suggestions) => ({
+  // id distinguishes the two VAT sets (3 vs 6) so each chat card knows whether
+  // *its* artefact is the one currently open.
+  id: `vat-anomalies-${suggestions.length}`,
+  kind: 'vat',
+  title: 'Momsanomalier',
+  count: suggestions.length,
+  suggestions,
+})
 
 /* Eva left drawer — two states, mirroring the ai-logo-concepts drawer mock:
    · list  — conversation list ("Ny samtale" at top, "Seneste" label, plain items)
@@ -11,6 +27,49 @@ import { EvaLogo } from './EvaLogo'
    surface follows the concept's light variant (white/slate, brand-blue send). */
 
 const SEED_CONVERSATIONS = [
+  {
+    id: 'anomalier',
+    title: 'Find anomalier',
+    time: 'nu',
+    preview: 'Find anomalier i momskoderne',
+    messages: [
+      { from: 'user', text: 'Find anomalier i kassekladden' },
+      {
+        from: 'eva',
+        text: (
+          <>
+            Jeg har gennemgået momskoderne og fundet <strong>3 posteringer</strong>,
+            hvor koden sandsynligvis er forkert. Gennemgå mine forslag nedenfor —
+            fjern fluebenet ved dem, du ikke vil rette, og tryk <strong>Anvend</strong>.
+          </>
+        ),
+        vatSuggestions: VAT_ANOMALIES,
+      },
+    ],
+    chips: ['Forklar IY25', 'Find flere anomalier'],
+  },
+  {
+    id: 'anomalier-q1',
+    title: 'Momstjek · hele kvartalet',
+    time: '1t',
+    preview: 'Tjek momskoderne for hele kvartalet',
+    messages: [
+      { from: 'user', text: 'Tjek momskoderne for hele kvartalet' },
+      {
+        from: 'eva',
+        text: (
+          <>
+            Jeg har gennemgået momskoderne for kvartalet og fundet
+            <strong> {vatAnomalySeedLarge.length} posteringer</strong>, hvor koden
+            sandsynligvis er forkert. Det er en del at se igennem — åbn artefaktet
+            for at gennemgå og rette dem, eller anvend alle forslag på én gang.
+          </>
+        ),
+        vatSuggestions: vatAnomalySeedLarge,
+      },
+    ],
+    chips: ['Anvend alle', 'Forklar IY25'],
+  },
   {
     id: 'reminders',
     title: 'Send reminders',
@@ -128,6 +187,30 @@ const SEED_CONVERSATIONS = [
 
 const NEW_CONVERSATION_REPLY =
   'Det er en prototype, så jeg svarer med et eksempel her — men forestil dig, at jeg gennemgår kassekladden og foreslår konteringer og workflows.'
+
+// Eva's reply when the user asks Eva to find anomalies — carries the VAT
+// suggestion card. Matched on intent in send() and via the "Find anomalier" chip.
+const ANOMALY_REPLY = {
+  from: 'eva',
+  text: (
+    <>
+      Jeg har gennemgået momskoderne og fundet <strong>3 posteringer</strong>,
+      hvor koden sandsynligvis er forkert. Gennemgå mine forslag nedenfor — fjern
+      fluebenet ved dem, du ikke vil rette, og tryk <strong>Anvend</strong>.
+    </>
+  ),
+  vatSuggestions: VAT_ANOMALIES,
+}
+const ANOMALY_INTENT = /anomali|forkert.*moms|moms.*forkert|tjek.*moms|moms.*fejl/i
+
+// Status lines shown next to the morphing mark while Eva thinks. Cycled in
+// order so the wait reads like Eva is narrating what it's doing.
+const THINK_PHRASES = [
+  'Tænker…',
+  'Kigger i kassekladden…',
+  'Samler data…',
+  'Skriver svar…',
+]
 
 function Citation({ n }) {
   return <span className="eva-citation">{n}</span>
@@ -266,7 +349,160 @@ function ArtifactCard({ artifact, onOpen, onSendReminders, remindersSent, remind
   )
 }
 
-function ChatMessage({ msg, onActivateWorkflow, onReviewWorkflow, activatedWorkflowKeys, onOpenArtifact, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated }) {
+// The from→to momskode chips, shared by the inline card and the artefact table.
+function VatChips({ from, to, toLabel }) {
+  return (
+    <span className="eva-vat-item-change">
+      <span className="eva-vat-chip eva-vat-chip-from">{from || 'Ingen'}</span>
+      <span className="eva-vat-arrow">→</span>
+      <span className="eva-vat-chip eva-vat-chip-to">{toLabel || to || 'Ingen'}</span>
+    </span>
+  )
+}
+
+// Inline VAT (moms) anomaly card — shown when there are ≤ VAT_INLINE_MAX
+// anomalies. Each suggestion has a checkbox (deselect to skip it); "Anvend"
+// writes the selected fixes to the grid via onApplyVat. Applied rows are driven
+// by the shared appliedIds set, so the card and the artefact stay in sync. The
+// user can always open the full artefact too.
+function VatSuggestionCard({ suggestions, appliedIds, onApplyVat, onOpenArtifact, onCloseArtifact, openArtifactId }) {
+  const isApplied = (id) => !!appliedIds?.has(id)
+  const [selected, setSelected] = useState(() => new Set(suggestions.filter((s) => !isApplied(s.id)).map((s) => s.id)))
+  const artifact = buildVatArtifact(suggestions)
+  const artifactOpen = openArtifactId === artifact.id
+  const toggleArtifact = () => (artifactOpen ? onCloseArtifact?.() : onOpenArtifact?.(artifact))
+
+  // Drop ids from the selection once they've been applied (here or in the artefact).
+  useEffect(() => {
+    setSelected((prev) => new Set([...prev].filter((id) => !appliedIds?.has(id) && suggestions.some((s) => s.id === id))))
+  }, [appliedIds, suggestions])
+
+  const toggle = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const allApplied = suggestions.every((s) => isApplied(s.id))
+  const count = selected.size
+  const apply = () => {
+    const changes = suggestions.filter((s) => selected.has(s.id))
+    if (changes.length === 0) return
+    onApplyVat?.(changes)
+  }
+
+  return (
+    <div className="eva-vat-card">
+      {/* Header doubles as the artefact toggle: open the full table, or — when
+          it's already open — collapse it from here (chevron points left). */}
+      <button
+        type="button"
+        className="eva-vat-card-head eva-vat-card-toggle"
+        onClick={toggleArtifact}
+        aria-expanded={artifactOpen}
+      >
+        <EvaLogo size={16} />
+        <span className="eva-vat-head-text">
+          <span className="eva-vat-head-title">Momsanomalier</span>
+          <span className="eva-vat-head-desc">
+            {suggestions.length} posteringer med mulig forkert momskode ·{' '}
+            {artifactOpen ? 'skjul artefakt' : 'åbn artefakt'}
+          </span>
+        </span>
+        <Icon name={artifactOpen ? 'chevron-left' : 'chevron-right'} className="eva-vat-head-chev" />
+      </button>
+      <div className="eva-vat-list">
+        {suggestions.map((s) => {
+          const applied = isApplied(s.id)
+          const on = selected.has(s.id)
+          return (
+            <div key={s.id} className={`eva-vat-item ${applied ? 'eva-vat-item-applied' : on ? '' : 'eva-vat-item-off'}`}>
+              {applied ? (
+                <span className="eva-vat-applied-mark" aria-label="Rettet"><Icon name="tick-circle" /></span>
+              ) : (
+                <Checkbox aria-label={`Vælg bilag ${s.bilag}`} checked={on} onChange={() => toggle(s.id)} />
+              )}
+              <span className="eva-vat-item-body">
+                <span className="eva-vat-item-top">
+                  <span className="eva-vat-item-bilag">Bilag {s.bilag} · {s.tekst}</span>
+                  {applied ? (
+                    <span className="eva-vat-item-done">Rettet</span>
+                  ) : (
+                    <span className="eva-vat-item-conf">{s.confidencePct}%</span>
+                  )}
+                </span>
+                <VatChips from={s.from} to={s.to} toLabel={s.toLabel} />
+                <span className="eva-vat-item-reason">{s.reason}</span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="eva-vat-foot">
+        {allApplied ? (
+          <span className="eva-vat-done-text"><Icon name="tick-circle" /> Alle momskoder rettet i kassekladden</span>
+        ) : (
+          <button type="button" className="eva-vat-apply" disabled={count === 0} onClick={apply}>
+            Anvend {count} ændring{count === 1 ? '' : 'er'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Artefact card — shown when there are > VAT_INLINE_MAX anomalies. Too many to
+// list inline, so the chat shows a compact card (mirroring the doc-reminder
+// ArtifactCard): click to open the full artefact, or apply all suggested fixes
+// at once with the quick-action pill.
+function VatArtifactCard({ suggestions, appliedIds, onApplyVat, onOpenArtifact, onCloseArtifact, openArtifactId }) {
+  const artifact = buildVatArtifact(suggestions)
+  const artifactOpen = openArtifactId === artifact.id
+  const toggleArtifact = () => (artifactOpen ? onCloseArtifact?.() : onOpenArtifact?.(artifact))
+  const pending = suggestions.filter((s) => !appliedIds?.has(s.id))
+  const applyAll = () => {
+    if (pending.length) onApplyVat?.(pending)
+  }
+  return (
+    <div className="eva-chat-artifact-wrap">
+      {/* Clicking the card toggles the artefact — open it, or collapse it from
+          here when it's already open (chevron points left). */}
+      <button
+        type="button"
+        className={`eva-chat-artifact ${artifactOpen ? 'eva-chat-artifact-open' : ''}`}
+        onClick={toggleArtifact}
+        aria-expanded={artifactOpen}
+      >
+        <span className="eva-chat-artifact-icon"><Icon name="document-preview" /></span>
+        <span className="eva-chat-artifact-text">
+          <span className="eva-chat-artifact-title">Momsanomalier</span>
+          <span className="eva-chat-artifact-meta">
+            {suggestions.length} posteringer · {artifactOpen ? 'klik for at skjule artefakt' : 'gennemgå og ret momskoder'}
+          </span>
+        </span>
+        <Icon name={artifactOpen ? 'chevron-left' : 'chevron-right'} className="eva-chat-artifact-chev" />
+      </button>
+      <div className="eva-artifact-quick">
+        {pending.length === 0 ? (
+          <span className="eva-artifact-quick-btn eva-artifact-quick-sent" aria-disabled="true">
+            <Icon name="tick" /> {suggestions.length} momskoder rettet
+          </span>
+        ) : (
+          <button type="button" className="eva-artifact-quick-btn" onClick={applyAll}>
+            <EvaLogo size={14} /> Anvend alle ændringer
+          </button>
+        )}
+        <button type="button" className="eva-artifact-quick-btn" onClick={toggleArtifact}>
+          <EvaLogo size={14} /> {artifactOpen ? 'Skjul artefakt' : 'Gennemgå i artefakt'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ChatMessage({ msg, onActivateWorkflow, onReviewWorkflow, activatedWorkflowKeys, onOpenArtifact, onCloseArtifact, openArtifactId, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated, onApplyVat, appliedVatIds }) {
   const bodyRef = useRef(null)
   const [vote, setVote] = useState(null) // null | 'up' | 'down'
 
@@ -308,6 +544,27 @@ function ChatMessage({ msg, onActivateWorkflow, onReviewWorkflow, activatedWorkf
           onReview={onReviewWorkflow}
         />
       )}
+      {msg.vatSuggestions && (
+        msg.vatSuggestions.length <= VAT_INLINE_MAX ? (
+          <VatSuggestionCard
+            suggestions={msg.vatSuggestions}
+            appliedIds={appliedVatIds}
+            onApplyVat={onApplyVat}
+            onOpenArtifact={onOpenArtifact}
+            onCloseArtifact={onCloseArtifact}
+            openArtifactId={openArtifactId}
+          />
+        ) : (
+          <VatArtifactCard
+            suggestions={msg.vatSuggestions}
+            appliedIds={appliedVatIds}
+            onApplyVat={onApplyVat}
+            onOpenArtifact={onOpenArtifact}
+            onCloseArtifact={onCloseArtifact}
+            openArtifactId={openArtifactId}
+          />
+        )
+      )}
       <div className="eva-msg-actions">
         <IconButton icon="copy" appearance="discrete" aria-label="Kopiér" onClick={copy} />
         <IconButton icon="circle-warning" appearance="discrete" aria-label="Rapportér" onClick={() => {}} />
@@ -330,7 +587,7 @@ function ChatMessage({ msg, onActivateWorkflow, onReviewWorkflow, activatedWorkf
   )
 }
 
-export default function EvaDrawer({ open, onClose, context, onClearContext, onOpenArtifact, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated, onReviewWorkflow, onActivateWorkflow, activatedWorkflowKeys, width = 380, onWidthChange }) {
+export default function EvaDrawer({ open, onClose, context, onClearContext, onOpenArtifact, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated, onReviewWorkflow, onActivateWorkflow, activatedWorkflowKeys, onApplyVat, appliedVatIds, openArtifactId, onCloseArtifact, width = 380, onWidthChange }) {
   const [conversations, setConversations] = useState(SEED_CONVERSATIONS)
   const [activeId, setActiveId] = useState(null) // null => conversation list
   const [draft, setDraft] = useState('')
@@ -338,6 +595,9 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
   // Random negative start offset (s) so each "thinking" moment begins on a
   // different one of the 11 pool constellations — see .eva-msg-thinking in eva.css.
   const [thinkDelay, setThinkDelay] = useState(0)
+  // Status text shown next to the morphing mark while Eva thinks — cycles
+  // through THINK_PHRASES so it reads like Eva is narrating what it's doing.
+  const [thinkPhrase, setThinkPhrase] = useState(0)
   const [listTab, setListTab] = useState('chats') // 'chats' | 'artefakter'
   const messagesRef = useRef(null)
   // Drag-to-resize (handle on the right edge — the left drawer grows rightward)
@@ -376,10 +636,19 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
     if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [active?.messages.length, activeId, thinking])
 
+  // While thinking, advance the status line every 700ms (stops at the last one).
+  useEffect(() => {
+    if (!thinking) return
+    const id = setInterval(() => {
+      setThinkPhrase((p) => Math.min(p + 1, THINK_PHRASES.length - 1))
+    }, 700)
+    return () => clearInterval(id)
+  }, [thinking])
+
   const startNewConversation = () => {
     const id = `c-${Date.now()}`
     setConversations((cs) => [
-      { id, title: 'Ny samtale', time: 'nu', preview: '', messages: [], chips: ['Bilag uden konto', 'Hvad er nyt?'] },
+      { id, title: 'Ny samtale', time: 'nu', preview: '', messages: [], chips: ['Find anomalier', 'Bilag uden konto', 'Hvad er nyt?'] },
       ...cs,
     ])
     setActiveId(id)
@@ -402,8 +671,8 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
     }
   }, [open])
 
-  const send = () => {
-    const text = draft.trim()
+  const sendText = (raw) => {
+    const text = (raw ?? '').trim()
     if (!text || !active || thinking) return
     const targetId = active.id
     setDraft('')
@@ -415,18 +684,21 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
     // Eva "thinks" briefly (morphing mark) before the reply lands.
     // 5s cycle through 11 constellations → random start point each send.
     setThinkDelay(-(Math.random() * 5))
+    setThinkPhrase(0)
     setThinking(true)
+    // Asking Eva to find anomalies yields the VAT suggestion card; everything
+    // else falls back to the generic prototype reply.
+    const reply = ANOMALY_INTENT.test(text) ? ANOMALY_REPLY : { from: 'eva', text: NEW_CONVERSATION_REPLY }
     setTimeout(() => {
       setConversations((cs) =>
         cs.map((c) =>
-          c.id === targetId
-            ? { ...c, messages: [...c.messages, { from: 'eva', text: NEW_CONVERSATION_REPLY }] }
-            : c
+          c.id === targetId ? { ...c, messages: [...c.messages, reply] } : c
         )
       )
       setThinking(false)
     }, 2200)
   }
+  const send = () => sendText(draft)
 
 
   return (
@@ -504,11 +776,15 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
                   onActivateWorkflow={onActivateWorkflow}
                   onReviewWorkflow={onReviewWorkflow}
                   onOpenArtifact={onOpenArtifact}
+                  onCloseArtifact={onCloseArtifact}
+                  openArtifactId={openArtifactId}
                   onSendReminders={onSendReminders}
                   remindersSent={remindersSent}
                   reminderSentCount={reminderSentCount}
                   onAutomate={onAutomate}
                   automated={automated}
+                  onApplyVat={onApplyVat}
+                  appliedVatIds={appliedVatIds}
                 />
               ))}
               {thinking && (
@@ -519,6 +795,7 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
                   style={{ '--eva-think-delay': `${thinkDelay.toFixed(2)}s` }}
                 >
                   <EvaLogo size={32} />
+                  <span className="eva-msg-thinking-text">{THINK_PHRASES[thinkPhrase]}</span>
                 </div>
               )}
             </div>
@@ -526,7 +803,12 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
               {active.chips?.length > 0 && (
                 <div className="eva-chat-chips">
                   {active.chips.map((c) => (
-                    <button type="button" key={c} className="eva-chat-chip" onClick={() => setDraft(c)}>
+                    <button
+                      type="button"
+                      key={c}
+                      className="eva-chat-chip"
+                      onClick={() => (ANOMALY_INTENT.test(c) ? sendText(c) : setDraft(c))}
+                    >
                       {c}
                     </button>
                   ))}

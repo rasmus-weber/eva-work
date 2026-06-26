@@ -161,6 +161,99 @@ export const suggestionSeed = {
   },
 };
 
+/* ── Eva: cell-level VAT (moms) anomaly suggestions (Eva chat) ────────────
+   Eva scans the moms column, flags codes that look wrong, and proposes a new
+   code per posting. Each item maps to a real row (rowId) so accepting it can
+   update the moms cell in the journal grid. `to: ''` means "Ingen moms".
+   Codes follow the journal's momsOptions: I25 (DK køb), IY25 (EU ydelseskøb,
+   omvendt betalingspligt), Abr, U25 (DK salg), … */
+export const vatAnomalySeed = [
+  {
+    id: 'vat-fb',
+    rowId: '0',
+    bilag: 2345699,
+    tekst: 'Annoncering Facebook',
+    konto: '2800 - Annoncer og reklame',
+    field: 'moms',
+    from: 'I25',
+    to: 'IY25',
+    confidencePct: 96,
+    reason: 'Facebook fakturerer fra Irland. Køb af ydelser fra EU er omvendt betalingspligt og skal bogføres med IY25 — ikke dansk købsmoms (I25).',
+  },
+  {
+    id: 'vat-google',
+    rowId: '17',
+    bilag: 2345681,
+    tekst: 'Google',
+    konto: '3604 - Edb-udgifter / software',
+    field: 'moms',
+    from: 'I25',
+    to: 'IY25',
+    confidencePct: 92,
+    reason: 'Google fakturerer også fra Irland. Samme mønster som Facebook — EU-ydelseskøb hører under IY25, ikke I25.',
+  },
+  {
+    id: 'vat-pension',
+    rowId: '3',
+    bilag: 2345695,
+    tekst: 'Skyldig pension',
+    konto: '1021 - Salg af ydelser til udland',
+    field: 'moms',
+    from: 'Abr',
+    to: '',
+    toLabel: 'Ingen moms',
+    confidencePct: 87,
+    reason: 'Lønrelaterede posteringer (pension, A-skat, feriepenge) er uden moms. Koden "Abr" ser ud til at være sat ved en fejl.',
+  },
+]
+
+/* A larger anomaly set (>3) used to demonstrate the artefact-only flow: when
+   Eva finds more than VAT_INLINE_MAX anomalies, the chat shows an artefact card
+   (apply-all quick pill) instead of the inline list, and the full table of
+   from→to changes is reviewed in the artefact. */
+export const vatAnomalySeedLarge = [
+  ...vatAnomalySeed,
+  {
+    id: 'vat-feriepenge',
+    rowId: '4',
+    bilag: 2345694,
+    tekst: 'Skyldige feriepenge & SH',
+    konto: '1021 - Salg af ydelser til udland',
+    field: 'moms',
+    from: 'Abr',
+    to: '',
+    toLabel: 'Ingen moms',
+    confidencePct: 86,
+    reason: 'Feriepenge er en lønforpligtelse uden moms. "Abr" er sandsynligvis sat ved en fejl.',
+  },
+  {
+    id: 'vat-askat',
+    rowId: '6',
+    bilag: 2345692,
+    tekst: 'Skyldig A-skat',
+    konto: '1021 - Salg af ydelser til udland',
+    field: 'moms',
+    from: 'Abr',
+    to: '',
+    toLabel: 'Ingen moms',
+    confidencePct: 85,
+    reason: 'A-skat afregnes uden moms. Momskoden "Abr" hører ikke til på denne postering.',
+  },
+  {
+    id: 'vat-atp',
+    rowId: '8',
+    bilag: 2345690,
+    tekst: 'Skyldig ATP',
+    konto: '1021 - Salg af ydelser til udland',
+    field: 'moms',
+    from: 'Abr',
+    to: '',
+    toLabel: 'Ingen moms',
+    confidencePct: 84,
+    reason: 'ATP-bidrag er uden moms. "Abr" ser ud til at være en fejlkontering.',
+  },
+]
+
 /* ── Eva: page-level workflow suggestions (for the Page drawer · Forslag tab) ── */
 // Entry-level workflow promotion shown in the Entry drawer's Forslag tab
 export const entryWorkflowSuggestion = {

@@ -230,6 +230,14 @@
 .eva-msg-thinking {
     align-self: flex-start;
     padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+/* Grey status line next to the morphing mark — distinct from the black reply text. */
+.eva-msg-thinking-text {
+    color: #8a8f98;
+    font-size: 13px;
 }
 /* Eva "thinking" morph — the five circles cycle through the 11 asymmetric
    pool constellations (EVA_POOL indices 1–11 from EvaLogo.jsx), the same shapes
@@ -1377,6 +1385,132 @@ td:has(.eva-suggested-cell) {
 }
 .eva-artifact-quick-sent:hover { background: #fff; border-color: #08AE87; }
 .eva-artifact-quick-sent svg { width: 15px; height: 15px; }
+
+/* ── Eva chat: VAT (moms) anomaly suggestion card ────────────────────────── */
+.eva-vat-card {
+    margin-top: 6px;
+    border: 1px solid rgba(232, 149, 57, 0.4);
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.eva-vat-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--eva-ink);
+}
+/* Header-as-button: opens / collapses the artefact from the chat */
+.eva-vat-card-toggle {
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 6px 8px;
+    margin: -4px -4px 0;
+    border-radius: 7px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+.eva-vat-card-toggle:hover { background: #f6f8fb; }
+.eva-vat-head-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.eva-vat-head-title { font-size: 12px; font-weight: 600; color: var(--eva-ink); }
+.eva-vat-head-desc { font-size: 11px; font-weight: 400; color: var(--eva-ink-3); }
+.eva-vat-head-chev { flex: none; color: var(--eva-ink-3); width: 18px; height: 18px; }
+.eva-vat-list { display: flex; flex-direction: column; gap: 6px; }
+.eva-vat-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 9px 10px;
+    border: 1px solid #eef1f5;
+    border-radius: 8px;
+    background: #fbfcfe;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+.eva-vat-item:hover { border-color: #d9e0ea; }
+/* First child is the taco Checkbox (or the applied tick) — keep it from
+   shrinking and nudge it to sit on the first text line. Using taco's Checkbox
+   makes it match the journal table's row-select boxes. */
+.eva-vat-item > :first-child { flex: none; margin-top: 1px; }
+.eva-vat-item-off { opacity: 0.55; }
+.eva-vat-applied-mark { display: inline-flex; color: #08795a; }
+.eva-vat-applied-mark svg { width: 18px; height: 18px; }
+.eva-vat-item-applied { background: #f3fbf8; border-color: #cdeee2; }
+.eva-vat-item-done { font-size: 11px; font-weight: 700; color: #08795a; flex: none; }
+.eva-vat-item-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.eva-vat-item-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.eva-vat-item-bilag { font-size: 12px; font-weight: 600; color: var(--eva-ink); }
+.eva-vat-item-conf { font-size: 11px; font-weight: 600; color: var(--eva-ink-3); flex: none; }
+.eva-vat-item-change { display: flex; align-items: center; gap: 6px; }
+.eva-vat-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 5px;
+}
+.eva-vat-chip-from { background: #fdeaea; color: #b42318; text-decoration: line-through; }
+.eva-vat-chip-to { background: #e7f6f0; color: #08795a; }
+.eva-vat-arrow { color: var(--eva-ink-3); font-size: 12px; }
+.eva-vat-item-reason { font-size: 12px; line-height: 1.45; color: var(--eva-ink-2); }
+.eva-vat-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.eva-vat-apply {
+    border: none;
+    background: var(--eva-blue);
+    color: #fff;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, opacity 0.12s ease;
+}
+.eva-vat-apply:hover:not(:disabled) { background: #244ca0; }
+.eva-vat-apply:disabled { opacity: 0.45; cursor: default; }
+.eva-vat-done-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #08795a;
+}
+.eva-vat-done-text svg { width: 17px; height: 17px; flex: none; }
+/* Secondary text button that opens the full artefact from the inline card */
+.eva-vat-artifact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--eva-blue);
+    cursor: pointer;
+}
+.eva-vat-artifact-link:hover { text-decoration: underline; }
+.eva-vat-artifact-link svg { width: 14px; height: 14px; }
+/* from→to chips inside the artefact table's "Momskode" column */
+.eva-vat-change-cell { display: inline-flex; align-items: center; gap: 6px; }
+.eva-vat-artifact-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #08795a;
+}
+.eva-vat-artifact-status svg { width: 16px; height: 16px; }
 .eva-chat-artifact-icon {
     flex: none;
     display: inline-flex;
@@ -1394,6 +1528,8 @@ td:has(.eva-suggested-cell) {
 .eva-chat-artifact-title { font-size: 14px; font-weight: 600; color: var(--eva-ink); }
 .eva-chat-artifact-meta { font-size: 12px; color: var(--eva-ink-3); }
 .eva-chat-artifact-chev { flex: none; color: var(--eva-ink-3); }
+/* Active state while its artefact is open (chevron points left) */
+.eva-chat-artifact-open { border-color: var(--eva-orange); background: #fdf3e4; }
 
 /* Full-screen artifact view — fills everything to the right of the 380px Eva
    drawer, on top of the journal + sidenav (page-body is position:relative). */

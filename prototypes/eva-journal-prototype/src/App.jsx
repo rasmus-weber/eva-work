@@ -6,6 +6,7 @@ import SideNav from './components/SideNav'
 import Sidebar from './components/Sidebar'
 import EvaDrawer from './components/eva/EvaDrawer'
 import DocumentReminderView, { MISSING_DOC_ROWS } from './components/eva/DocumentReminderView'
+import VatAnomalyView from './components/eva/VatAnomalyView'
 import WorkflowDrawer from './components/eva/WorkflowDrawer'
 import { EvaLogo, EvaLogoDefs } from './components/eva/EvaLogo'
 import { SuggestedCell, EvaInput, EvaSelect2, renderAccountOptions } from './components/eva/evaCells'
@@ -144,6 +145,22 @@ export default function App() {
       [rowId]: { ...prev[rowId], [field]: { ...prev[rowId][field], status: 'accepted' } },
     }))
   }, [rowSuggestionState])
+
+  // Eva chat: which VAT-anomaly suggestions have been applied (shared by the
+  // inline chat card and the artefact view so they stay in sync).
+  const [appliedVatIds, setAppliedVatIds] = useState(() => new Set())
+  // Apply selected VAT (moms) anomaly fixes straight to the grid cells.
+  const applyVatChanges = useCallback((changes) => {
+    setRows(prev => prev.map(r => {
+      const c = changes.find(ch => ch.rowId === r.id)
+      return c ? { ...r, [c.field]: c.to } : r
+    }))
+    setAppliedVatIds(prev => {
+      const next = new Set(prev)
+      changes.forEach(c => next.add(c.id))
+      return next
+    })
+  }, [])
 
   const dismissSuggestion = useCallback((rowId, field) => {
     const sug = rowSuggestionState[rowId]?.[field]
@@ -483,6 +500,10 @@ export default function App() {
           onReviewWorkflow={reviewWorkflow}
           onActivateWorkflow={activateWorkflow}
           activatedWorkflowKeys={activatedWorkflowKeys}
+          onApplyVat={applyVatChanges}
+          appliedVatIds={appliedVatIds}
+          openArtifactId={artifactView?.id}
+          onCloseArtifact={() => setArtifactView(null)}
         />
         <SideNav
           collapsed={sideNavCollapsed}
@@ -950,12 +971,19 @@ export default function App() {
           </Drawer>
         </div>
         <DocumentReminderView
-          open={!!artifactView}
+          open={!!artifactView && artifactView.kind !== 'vat'}
           rows={docReminderRows}
           onSendReminders={sendDocReminders}
           automated={artifactAutomated}
           onReviewAutomation={() => reviewWorkflow(DOC_REMINDER_AUTOMATION)}
           onOpenActivatedAutomation={() => openActivatedWorkflow(DOC_REMINDER_AUTOMATION)}
+          onClose={() => setArtifactView(null)}
+        />
+        <VatAnomalyView
+          open={!!artifactView && artifactView.kind === 'vat'}
+          suggestions={artifactView?.suggestions || []}
+          appliedIds={appliedVatIds}
+          onApply={applyVatChanges}
           onClose={() => setArtifactView(null)}
         />
       </div>
