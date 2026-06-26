@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Button, IconButton, Table3, Icon, Select2, Menu, useToast, Drawer } from '@economic/taco'
-import { rows as initialRows, logoVariations, invoiceData, fmt, suggestionSeed, workflowSuggestionSeed, entryWorkflowSuggestion } from './data'
+import { rows as initialRows, logoVariations, invoiceData, fmt, suggestionSeed, workflowSuggestionSeed, entryWorkflowSuggestion, evaLogSeed } from './data'
 import TopNav from './components/TopNav'
 import SideNav from './components/SideNav'
 import Sidebar from './components/Sidebar'
@@ -53,8 +53,18 @@ export default function App() {
   sidebarWidthRef.current = sidebarWidth
   const [drilldownStack, setDrilldownStack] = useState([])
   const [selectedRows, setSelectedRows] = useState([])
+  // Eva log: already-applied VAT fixes from the seeded log history — pre-applied
+  // to the grid on load so the journal and the Eva log agree out of the box.
+  const seededVatChanges = evaLogSeed
+    .filter(e => e.kind === 'vat' && !e.reverted)
+    .flatMap(e => (e.children || []).filter(c => !c.reverted))
   // Journal rows are lifted to state so inline edits + Eva-accepted suggestions persist
-  const [rows, setRows] = useState(initialRows)
+  const [rows, setRows] = useState(() =>
+    initialRows.map(r => {
+      const c = seededVatChanges.find(ch => ch.rowId === r.id)
+      return c ? { ...r, [c.field]: c.to } : r
+    })
+  )
   // Eva: cell-level suggestion state + left/right drawer mode
   const [rowSuggestionState, setRowSuggestionState] = useState(suggestionSeed)
   const [evaOpen, setEvaOpen] = useState(false)
@@ -86,9 +96,29 @@ export default function App() {
   // artifact view share one source of truth for the "Påmindelse sendt" status.
   const [docReminderRows, setDocReminderRows] = useState(MISSING_DOC_ROWS)
   const sendDocReminders = useCallback((ids) => {
-    setDocReminderRows(prev => prev.map(r =>
-      (!ids || ids.length === 0 || ids.includes(r.id)) ? { ...r, status: 'Påmindelse sendt' } : r
-    ))
+    let sent = []
+    setDocReminderRows(prev => {
+      const next = prev.map(r =>
+        (!ids || ids.length === 0 || ids.includes(r.id)) ? { ...r, status: 'Påmindelse sendt' } : r
+      )
+      sent = prev.filter(r => (!ids || ids.length === 0 || ids.includes(r.id)) && r.status !== 'Påmindelse sendt')
+      return next
+    })
+    if (sent.length) {
+      logEvaAction({
+        id: `log-rem-${Date.now()}`,
+        date: nowStamp(),
+        actor: 'Eva',
+        icon: 'bell-solid',
+        typeLabel: 'Association',
+        kind: 'reminder',
+        revertible: false,
+        reverted: false,
+        title: 'Påmindelser sendt',
+        description: `Eva · ${sent.length} poster${sent.length === 1 ? 'ing' : 'inger'}`,
+        children: sent.map(r => ({ id: `rem-${r.id}-${Date.now()}`, bilag: r.bilag, tekst: r.tekst, note: r.ansvarlig })),
+      })
+    }
   }, [])
   const reminderSentCount = docReminderRows.filter(r => r.status === 'Påmindelse sendt').length
   const remindersAllSent = reminderSentCount === docReminderRows.length
@@ -139,16 +169,54 @@ export default function App() {
   const acceptSuggestion = useCallback((rowId, field) => {
     const sug = rowSuggestionState[rowId]?.[field]
     if (!sug) return
+    const row = rows.find(r => r.id === rowId)
+    const prevValue = row ? row[field] : ''
     setRows(prev => prev.map(r => (r.id === rowId ? { ...r, [field]: sug.value } : r)))
     setRowSuggestionState(prev => ({
       ...prev,
       [rowId]: { ...prev[rowId], [field]: { ...prev[rowId][field], status: 'accepted' } },
     }))
-  }, [rowSuggestionState])
+    const label = FIELD_LABELS[field] || field
+    logEvaAction({
+      id: `log-sug-${rowId}-${field}-${Date.now()}`,
+      date: nowStamp(),
+      actor: 'Eva',
+      icon: 'edit',
+      typeLabel: 'Ændring',
+      kind: 'suggestion',
+      revertible: true,
+      reverted: false,
+      title: `${label} udfyldt`,
+      description: `Eva · Bilag ${row?.bilag ?? ''}`,
+      children: [{
+        id: `sug-${rowId}-${field}-${Date.now()}`, rowId, bilag: row?.bilag, tekst: row?.tekst,
+        field, fieldLabel: label, from: prevValue, to: sug.value, toLabel: sug.value, reverted: false,
+      }],
+    })
+    // logEvaAction/nowStamp are declared below; referenced at call time (stable).
+  }, [rowSuggestionState, rows]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Eva chat: which VAT-anomaly suggestions have been applied (shared by the
   // inline chat card and the artefact view so they stay in sync).
-  const [appliedVatIds, setAppliedVatIds] = useState(() => new Set())
+  const [appliedVatIds, setAppliedVatIds] = useState(() => new Set(seededVatChanges.map(c => c.id)))
+
+  // Eva activity log — every action Eva performs, newest first (see EvaLog).
+  const [evaLog, setEvaLog] = useState(evaLogSeed)
+  const nowStamp = () => {
+    const d = new Date()
+    const p = (n) => String(n).padStart(2, '0')
+    return `I dag ${p(d.getHours())}:${p(d.getMinutes())}`
+  }
+  const logEvaAction = useCallback((entry) => {
+    setEvaLog(prev => [entry, ...prev])
+  }, [])
+  // Toggle a logged workflow's active/deactivated state straight from the log.
+  const toggleWorkflowLog = useCallback((entryId) => {
+    setEvaLog(prev => prev.map(e =>
+      e.id === entryId ? { ...e, active: e.active === false } : e
+    ))
+  }, [])
+
   // Apply selected VAT (moms) anomaly fixes straight to the grid cells.
   const applyVatChanges = useCallback((changes) => {
     setRows(prev => prev.map(r => {
@@ -160,7 +228,63 @@ export default function App() {
       changes.forEach(c => next.add(c.id))
       return next
     })
-  }, [])
+    // Record the bulk (or single) fix as one revertible action in the Eva log.
+    logEvaAction({
+      id: `log-vat-${Date.now()}`,
+      date: nowStamp(),
+      actor: 'Eva',
+      icon: 'edit',
+      typeLabel: 'Ændring',
+      kind: 'vat',
+      revertible: true,
+      reverted: false,
+      title: changes.length > 1 ? 'Momskoder rettet' : 'Momskode rettet',
+      description: changes.length > 1 ? `Eva · ${changes.length} posteringer` : `Eva · Bilag ${changes[0].bilag}`,
+      children: changes.map(c => ({
+        id: c.id, rowId: c.rowId, bilag: c.bilag, tekst: c.tekst,
+        field: c.field, fieldLabel: 'Moms', from: c.from, to: c.to, toLabel: c.toLabel, reverted: false,
+      })),
+    })
+  }, [logEvaAction])
+
+  // Revert an Eva log action — a single event (childId given) or the whole
+  // action (childId null). Field-change actions restore the grid cell from
+  // `child.from`; VAT reverts also un-apply in the chat cards/artefact.
+  const revertEvaLog = useCallback((entryId, childId = null) => {
+    const entry = evaLog.find(e => e.id === entryId)
+    if (!entry || !entry.revertible) return
+    const targets = (entry.children || []).filter(c => !c.reverted && (childId == null || c.id === childId))
+    if (!targets.length) return
+    // Restore the affected journal cells (VAT + suggestion field changes).
+    setRows(prev => prev.map(r => {
+      const t = targets.find(c => c.rowId === r.id)
+      return t && t.field ? { ...r, [t.field]: t.from } : r
+    }))
+    if (entry.kind === 'vat') {
+      setAppliedVatIds(prev => {
+        const next = new Set(prev)
+        targets.forEach(c => next.delete(c.id))
+        return next
+      })
+    } else if (entry.kind === 'suggestion') {
+      setRowSuggestionState(prev => {
+        const next = { ...prev }
+        targets.forEach(c => {
+          if (next[c.rowId]?.[c.field]) {
+            next[c.rowId] = { ...next[c.rowId], [c.field]: { ...next[c.rowId][c.field], status: 'pending' } }
+          }
+        })
+        return next
+      })
+    }
+    // Mark the reverted events in the log (and the whole action if all are gone).
+    const targetIds = new Set(targets.map(t => t.id))
+    setEvaLog(prev => prev.map(e => {
+      if (e.id !== entryId) return e
+      const children = (e.children || []).map(c => targetIds.has(c.id) ? { ...c, reverted: true } : c)
+      return { ...e, children, reverted: children.every(c => c.reverted) }
+    }))
+  }, [evaLog])
 
   const dismissSuggestion = useCallback((rowId, field) => {
     const sug = rowSuggestionState[rowId]?.[field]
@@ -504,6 +628,9 @@ export default function App() {
           appliedVatIds={appliedVatIds}
           openArtifactId={artifactView?.id}
           onCloseArtifact={() => setArtifactView(null)}
+          evaLog={evaLog}
+          onRevertLog={revertEvaLog}
+          onToggleWorkflowLog={toggleWorkflowLog}
         />
         <SideNav
           collapsed={sideNavCollapsed}

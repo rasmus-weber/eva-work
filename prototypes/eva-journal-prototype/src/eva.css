@@ -1511,6 +1511,103 @@ td:has(.eva-suggested-cell) {
     color: #08795a;
 }
 .eva-vat-artifact-status svg { width: 16px; height: 16px; }
+
+/* ── Eva "Log" tab — list of all Eva actions, bulk-expandable & revertible ── */
+.eva-log-tab { padding-top: 4px; }
+.eva-log-list .eva-activity-filter { margin-bottom: 4px; }
+/* Title row inside a log card: title + event-type chip + reverted tag */
+.eva-log-title-row { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.eva-log-title-struck { text-decoration: line-through; color: var(--eva-ink-3); }
+.eva-log-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--eva-ink-3);
+    background: #eef1f5;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+.eva-log-action-reverted { opacity: 0.7; }
+/* Expanded action body — the individual events */
+.eva-log-events { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.eva-log-event {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 1px solid #eef1f5;
+    border-radius: 7px;
+    background: #fbfcfe;
+}
+.eva-log-event-reverted { opacity: 0.55; }
+.eva-log-event-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.eva-log-event-bilag { font-size: 12px; font-weight: 600; color: var(--eva-ink); }
+.eva-log-event-field { font-weight: 400; color: var(--eva-ink-3); }
+/* Per-event revert control */
+.eva-log-revert-btn {
+    flex: none;
+    border: 1px solid #d9e0ea;
+    background: #fff;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--eva-ink-2);
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.eva-log-revert-btn:hover { background: #fdeaea; border-color: #e7b3ad; color: #b42318; }
+/* Bulk "revert all" control at the top of an expanded action */
+.eva-log-revert-all {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #e7b3ad;
+    background: #fff;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b42318;
+    cursor: pointer;
+    margin-bottom: 2px;
+}
+.eva-log-revert-all:hover { background: #fdeaea; }
+.eva-log-revert-all svg { width: 14px; height: 14px; }
+.eva-log-reverted-tag {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--eva-ink-3);
+}
+.eva-log-reverted-tag svg { width: 13px; height: 13px; }
+/* Workflow activate/deactivate toggle inside a workflow log action */
+.eva-log-wf-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #d9e0ea;
+    background: #fff;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--eva-ink-2);
+    cursor: pointer;
+    margin-top: 2px;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.eva-log-wf-btn:hover { background: #f6f8fb; border-color: var(--eva-ink-3); }
+.eva-log-wf-btn svg { width: 14px; height: 14px; }
+.eva-log-wf-reactivate { border-color: #b6e0d0; color: #08795a; }
+.eva-log-wf-reactivate:hover { background: #f3fbf8; border-color: #08AE87; }
 .eva-chat-artifact-icon {
     flex: none;
     display: inline-flex;

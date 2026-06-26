@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button, IconButton, Icon, Tag, Tabs, Checkbox } from '@economic/taco'
 import { EvaLogo } from './EvaLogo'
+import EvaLog from './EvaLog'
 import { vatAnomalySeed, vatAnomalySeedLarge } from '../../data'
 
 const VAT_ANOMALIES = vatAnomalySeed
@@ -587,7 +588,7 @@ function ChatMessage({ msg, onActivateWorkflow, onReviewWorkflow, activatedWorkf
   )
 }
 
-export default function EvaDrawer({ open, onClose, context, onClearContext, onOpenArtifact, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated, onReviewWorkflow, onActivateWorkflow, activatedWorkflowKeys, onApplyVat, appliedVatIds, openArtifactId, onCloseArtifact, width = 380, onWidthChange }) {
+export default function EvaDrawer({ open, onClose, context, onClearContext, onOpenArtifact, onSendReminders, remindersSent, reminderSentCount, onAutomate, automated, onReviewWorkflow, onActivateWorkflow, activatedWorkflowKeys, onApplyVat, appliedVatIds, openArtifactId, onCloseArtifact, evaLog = [], onRevertLog, onToggleWorkflowLog, width = 380, onWidthChange }) {
   const [conversations, setConversations] = useState(SEED_CONVERSATIONS)
   const [activeId, setActiveId] = useState(null) // null => conversation list
   const [draft, setDraft] = useState('')
@@ -860,6 +861,9 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
               <Tabs.Trigger id="artefakter">
                 Artefakter{artifacts.length > 0 && <span className="eva-tab-count">{artifacts.length}</span>}
               </Tabs.Trigger>
+              <Tabs.Trigger id="log">
+                Log{evaLog.length > 0 && <span className="eva-tab-count">{evaLog.length}</span>}
+              </Tabs.Trigger>
             </Tabs.List>
             <Tabs.Content id="chats" className="eva-conv-list">
               <button type="button" className="eva-conv-new" onClick={startNewConversation}>
@@ -894,6 +898,9 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
                   </button>
                 ))
               )}
+            </Tabs.Content>
+            <Tabs.Content id="log" className="eva-conv-list eva-log-tab">
+              <EvaLog entries={evaLog} onRevert={onRevertLog} onToggleWorkflow={onToggleWorkflowLog} />
             </Tabs.Content>
           </Tabs>
         )}

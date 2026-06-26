@@ -254,6 +254,161 @@ export const vatAnomalySeedLarge = [
   },
 ]
 
+/* ── Eva: activity log (the "Log" tab in the Eva drawer) ──────────────────
+   Every action Eva has performed, newest first. An action can bundle several
+   entity events (e.g. one bulk VAT fix = N modification events) — those carry
+   a `children` array, can be expanded, and reverted in bulk or per event.
+   `revertible: true` entries actually undo their grid changes when reverted
+   (App restores the cell from `child.from`); seeded "settled" actions like a
+   sent reminder are not revertible. Event types mirror the Entity Logs doc
+   (Modification / Transformation / …). The first VAT entry is pre-applied to
+   the grid on load (rows 5/7/9) so the grid and log agree out of the box. */
+export const evaLogSeed = [
+  {
+    id: 'log-seed-vat',
+    date: 'I dag 08:42',
+    actor: 'Eva',
+    icon: 'edit',
+    typeLabel: 'Ændring',
+    kind: 'vat',
+    revertible: true,
+    reverted: false,
+    title: 'Momskoder rettet',
+    description: 'Eva · 3 posteringer',
+    children: [
+      { id: 'seed-vat-1', rowId: '5', bilag: 2345693, tekst: 'Skyldige feriepenge & SH', field: 'moms', fieldLabel: 'Moms', from: 'Abr', to: '', toLabel: 'Ingen moms', reverted: false },
+      { id: 'seed-vat-2', rowId: '7', bilag: 2345691, tekst: 'Skyldige feriepenge & SH', field: 'moms', fieldLabel: 'Moms', from: 'Abr', to: '', toLabel: 'Ingen moms', reverted: false },
+      { id: 'seed-vat-3', rowId: '9', bilag: 2345689, tekst: 'Skyldig DA-barsel', field: 'moms', fieldLabel: 'Moms', from: 'Abr', to: '', toLabel: 'Ingen moms', reverted: false },
+    ],
+  },
+  {
+    id: 'log-seed-booked',
+    date: 'I går 16:10',
+    actor: 'Eva',
+    icon: 'book',
+    typeLabel: 'Transformation',
+    kind: 'booking',
+    revertible: false,
+    reverted: false,
+    title: 'Posteringer bogført',
+    description: 'Eva · 5 posteringer',
+    children: [
+      { id: 'bk-1', bilag: 2345692, tekst: 'Bankpost → bogført bilag 2034' },
+      { id: 'bk-2', bilag: 2345691, tekst: 'Bankpost → bogført bilag 2033' },
+      { id: 'bk-3', bilag: 2345690, tekst: 'Bankpost → bogført bilag 2032' },
+      { id: 'bk-4', bilag: 2345689, tekst: 'Bankpost → bogført bilag 2031' },
+      { id: 'bk-5', bilag: 2345688, tekst: 'Bankpost → bogført bilag 2030' },
+    ],
+  },
+  {
+    id: 'log-seed-reminders',
+    date: 'I går 15:30',
+    actor: 'Eva',
+    icon: 'bell-solid',
+    typeLabel: 'Association',
+    kind: 'reminder',
+    revertible: false,
+    reverted: false,
+    title: 'Påmindelser sendt',
+    description: 'Eva · 8 posteringer',
+    children: [
+      { id: 'rem-1', bilag: 2345699, tekst: 'Annoncering Facebook', note: 'Carl Ejlers' },
+      { id: 'rem-2', bilag: 2345694, tekst: 'Skyldige feriepenge', note: 'Maria Svensen' },
+      { id: 'rem-3', bilag: 2345690, tekst: 'Skyldig ATP', note: 'Maria Svensen' },
+      { id: 'rem-4', bilag: 2345687, tekst: 'Skyldig pension', note: 'Carl Ejlers' },
+      { id: 'rem-5', bilag: 2345683, tekst: 'Skyldige feriepenge', note: 'Anders Holm' },
+      { id: 'rem-6', bilag: 2345681, tekst: 'Google Workspace', note: 'Carl Ejlers' },
+      { id: 'rem-7', bilag: 2345678, tekst: 'Rent FEB', note: 'Anders Holm' },
+      { id: 'rem-8', bilag: 2345675, tekst: 'Telefoni og internet', note: 'Maria Svensen' },
+    ],
+  },
+  {
+    id: 'log-seed-attach',
+    date: 'I går 14:02',
+    actor: 'Eva',
+    icon: 'attach-auto',
+    typeLabel: 'Association',
+    kind: 'attach',
+    revertible: false,
+    reverted: false,
+    title: 'Bilag tilføjet',
+    description: 'Eva · Bilag 2345699',
+    children: [
+      { id: 'at-1', label: 'Postering', value: 'Bilag 2345699 · Annoncering Facebook' },
+      { id: 'at-2', label: 'Fil', value: 'Faktura_Meta.pdf' },
+    ],
+  },
+  {
+    id: 'log-seed-workflow',
+    date: 'I går 11:05',
+    actor: 'Eva',
+    icon: 'workflow',
+    typeLabel: 'Oprettelse',
+    kind: 'workflow',
+    active: true,
+    revertible: false,
+    reverted: false,
+    title: 'Workflow aktiveret',
+    description: 'Eva · Auto-bogfør PostNord-gebyrer',
+    children: [
+      { id: 'wf-1', label: 'Trigger', value: 'Tekst = "PostNord"' },
+      { id: 'wf-2', label: 'Handling', value: 'Bogfør på konto 7220' },
+      { id: 'wf-3', label: 'Sikkerhed', value: '99%' },
+    ],
+  },
+  {
+    id: 'log-seed-created',
+    date: 'I går 09:30',
+    actor: 'Eva',
+    icon: 'circle-plus',
+    typeLabel: 'Oprettelse',
+    kind: 'create',
+    revertible: false,
+    reverted: false,
+    title: 'Postering oprettet',
+    description: 'Eva · Bilag 2345692',
+    children: [
+      { id: 'cr-1', label: 'Kassekladde', value: 'Daglig' },
+      { id: 'cr-2', label: 'Konto', value: '5820 - Bankkonto' },
+      { id: 'cr-3', label: 'Beløb', value: '100,00' },
+    ],
+  },
+  {
+    id: 'log-seed-workflow-2',
+    date: '24.06.26 13:20',
+    actor: 'Eva',
+    icon: 'workflow',
+    typeLabel: 'Oprettelse',
+    kind: 'workflow',
+    active: true,
+    revertible: false,
+    reverted: false,
+    title: 'Workflow aktiveret',
+    description: 'Eva · Auto-kontér porto og gebyrer',
+    children: [
+      { id: 'wf2-1', label: 'Trigger', value: 'Tekst = "Porto og gebyrer"' },
+      { id: 'wf2-2', label: 'Handling', value: 'Sæt konto = 2750' },
+      { id: 'wf2-3', label: 'Sikkerhed', value: '94%' },
+    ],
+  },
+  {
+    id: 'log-seed-deleted',
+    date: '23.06.26 16:40',
+    actor: 'Eva',
+    icon: 'remove',
+    typeLabel: 'Sletning',
+    kind: 'delete',
+    revertible: false,
+    reverted: false,
+    title: 'Dublet fjernet',
+    description: 'Eva · Bilag 2345701',
+    children: [
+      { id: 'dl-1', label: 'Postering', value: 'Bilag 2345701 · Annoncering Facebook' },
+      { id: 'dl-2', label: 'Årsag', value: 'Dublet af bilag 2345699' },
+    ],
+  },
+]
+
 /* ── Eva: page-level workflow suggestions (for the Page drawer · Forslag tab) ── */
 // Entry-level workflow promotion shown in the Entry drawer's Forslag tab
 export const entryWorkflowSuggestion = {
