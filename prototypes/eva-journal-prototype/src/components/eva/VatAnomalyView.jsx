@@ -40,11 +40,11 @@ export default function VatAnomalyView({ open, onClose, suggestions = [], applie
   }
 
   return (
-    <div className="eva-artifact-view" role="dialog" aria-label="Momsanomalier">
+    <div className="eva-artifact-view" role="dialog" aria-label="Momsafvigelser">
       <div className="eva-artifact-header">
         <div className="eva-artifact-title">
           <span className="eva-artifact-eyebrow"><EvaLogo size={18} /> Eva · Artefakt</span>
-          <h2>Momsanomalier</h2>
+          <h2>Momsafvigelser</h2>
         </div>
         <div className="eva-artifact-actions">
           <IconButton icon="close" appearance="discrete" aria-label="Luk" onClick={onClose} />

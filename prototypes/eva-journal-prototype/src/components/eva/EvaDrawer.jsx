@@ -14,7 +14,7 @@ const buildVatArtifact = (suggestions) => ({
   // *its* artefact is the one currently open.
   id: `vat-anomalies-${suggestions.length}`,
   kind: 'vat',
-  title: 'Momsanomalier',
+  title: 'Momsafvigelser',
   count: suggestions.length,
   suggestions,
 })
@@ -29,12 +29,12 @@ const buildVatArtifact = (suggestions) => ({
 
 const SEED_CONVERSATIONS = [
   {
-    id: 'anomalier',
-    title: 'Find anomalier',
+    id: 'afvigelser',
+    title: 'Find afvigelser',
     time: 'nu',
-    preview: 'Find anomalier i momskoderne',
+    preview: 'Find afvigelser i momskoderne',
     messages: [
-      { from: 'user', text: 'Find anomalier i kassekladden' },
+      { from: 'user', text: 'Find afvigelser i kassekladden' },
       {
         from: 'eva',
         text: (
@@ -47,10 +47,10 @@ const SEED_CONVERSATIONS = [
         vatSuggestions: VAT_ANOMALIES,
       },
     ],
-    chips: ['Forklar IY25', 'Find flere anomalier'],
+    chips: ['Forklar IY25', 'Find flere afvigelser'],
   },
   {
-    id: 'anomalier-q1',
+    id: 'afvigelser-q1',
     title: 'Momstjek · hele kvartalet',
     time: '1t',
     preview: 'Tjek momskoderne for hele kvartalet',
@@ -190,7 +190,7 @@ const NEW_CONVERSATION_REPLY =
   'Det er en prototype, så jeg svarer med et eksempel her — men forestil dig, at jeg gennemgår kassekladden og foreslår konteringer og workflows.'
 
 // Eva's reply when the user asks Eva to find anomalies — carries the VAT
-// suggestion card. Matched on intent in send() and via the "Find anomalier" chip.
+// suggestion card. Matched on intent in send() and via the "Find afvigelser" chip.
 const ANOMALY_REPLY = {
   from: 'eva',
   text: (
@@ -202,7 +202,7 @@ const ANOMALY_REPLY = {
   ),
   vatSuggestions: VAT_ANOMALIES,
 }
-const ANOMALY_INTENT = /anomali|forkert.*moms|moms.*forkert|tjek.*moms|moms.*fejl/i
+const ANOMALY_INTENT = /afvigelse|anomali|forkert.*moms|moms.*forkert|tjek.*moms|moms.*fejl/i
 
 // Status lines shown next to the morphing mark while Eva thinks. Cycled in
 // order so the wait reads like Eva is narrating what it's doing.
@@ -406,7 +406,7 @@ function VatSuggestionCard({ suggestions, appliedIds, onApplyVat, onOpenArtifact
       >
         <EvaLogo size={16} />
         <span className="eva-vat-head-text">
-          <span className="eva-vat-head-title">Momsanomalier</span>
+          <span className="eva-vat-head-title">Momsafvigelser</span>
           <span className="eva-vat-head-desc">
             {suggestions.length} posteringer med mulig forkert momskode ·{' '}
             {artifactOpen ? 'skjul artefakt' : 'åbn artefakt'}
@@ -478,7 +478,7 @@ function VatArtifactCard({ suggestions, appliedIds, onApplyVat, onOpenArtifact, 
       >
         <span className="eva-chat-artifact-icon"><Icon name="document-preview" /></span>
         <span className="eva-chat-artifact-text">
-          <span className="eva-chat-artifact-title">Momsanomalier</span>
+          <span className="eva-chat-artifact-title">Momsafvigelser</span>
           <span className="eva-chat-artifact-meta">
             {suggestions.length} posteringer · {artifactOpen ? 'klik for at skjule artefakt' : 'gennemgå og ret momskoder'}
           </span>
@@ -649,7 +649,7 @@ export default function EvaDrawer({ open, onClose, context, onClearContext, onOp
   const startNewConversation = () => {
     const id = `c-${Date.now()}`
     setConversations((cs) => [
-      { id, title: 'Ny samtale', time: 'nu', preview: '', messages: [], chips: ['Find anomalier', 'Bilag uden konto', 'Hvad er nyt?'] },
+      { id, title: 'Ny samtale', time: 'nu', preview: '', messages: [], chips: ['Find afvigelser', 'Bilag uden konto', 'Hvad er nyt?'] },
       ...cs,
     ])
     setActiveId(id)
