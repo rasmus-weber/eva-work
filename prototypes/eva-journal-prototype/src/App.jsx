@@ -108,10 +108,11 @@ export default function App() {
       logEvaAction({
         id: `log-rem-${Date.now()}`,
         date: nowStamp(),
-        actor: 'Eva',
+        actor: 'Maria Svensen via Eva',
         icon: 'bell-solid',
         typeLabel: 'Association',
         kind: 'reminder',
+        bulk: sent.length > 1,
         revertible: false,
         reverted: false,
         title: 'Påmindelser sendt',
@@ -180,7 +181,7 @@ export default function App() {
     logEvaAction({
       id: `log-sug-${rowId}-${field}-${Date.now()}`,
       date: nowStamp(),
-      actor: 'Eva',
+      actor: 'Maria Svensen via Eva',
       icon: 'edit',
       typeLabel: 'Ændring',
       kind: 'suggestion',
@@ -202,13 +203,15 @@ export default function App() {
 
   // Eva activity log — every action Eva performs, newest first (see EvaLog).
   const [evaLog, setEvaLog] = useState(evaLogSeed)
+  const nextLogId = useRef(40873) // running reference number for new log actions
   const nowStamp = () => {
     const d = new Date()
     const p = (n) => String(n).padStart(2, '0')
     return `I dag ${p(d.getHours())}:${p(d.getMinutes())}`
   }
   const logEvaAction = useCallback((entry) => {
-    setEvaLog(prev => [entry, ...prev])
+    const withRef = entry.ref ? entry : { ...entry, ref: `${nextLogId.current++} — EVA` }
+    setEvaLog(prev => [withRef, ...prev])
   }, [])
   // Toggle a logged workflow's active/deactivated state straight from the log.
   const toggleWorkflowLog = useCallback((entryId) => {
@@ -232,17 +235,18 @@ export default function App() {
     logEvaAction({
       id: `log-vat-${Date.now()}`,
       date: nowStamp(),
-      actor: 'Eva',
+      actor: 'Maria Svensen via Eva',
       icon: 'edit',
       typeLabel: 'Ændring',
       kind: 'vat',
+      bulk: changes.length > 1,
       revertible: true,
       reverted: false,
       title: changes.length > 1 ? 'Momskoder rettet' : 'Momskode rettet',
       description: changes.length > 1 ? `Eva · ${changes.length} posteringer` : `Eva · Bilag ${changes[0].bilag}`,
       children: changes.map(c => ({
         id: c.id, rowId: c.rowId, bilag: c.bilag, tekst: c.tekst,
-        field: c.field, fieldLabel: 'Moms', from: c.from, to: c.to, toLabel: c.toLabel, reverted: false,
+        field: c.field, fieldLabel: 'Moms', from: c.from, to: c.to, toLabel: c.toLabel, reason: c.reason, reverted: false,
       })),
     })
   }, [logEvaAction])
@@ -395,6 +399,16 @@ export default function App() {
     setWfWidth(sidebarOpenRef.current ? sidebarWidthRef.current : 400)
     setWorkflowDrawer({ workflow: wf, activated: false })
   }, [])
+  // Open the workflow drawer from a workflow entry in the Eva log.
+  const openLogWorkflow = useCallback((entry) => {
+    const get = (label) => (entry.children || []).find(c => c.label === label)?.value
+    reviewWorkflow({
+      title: entry.workflow || entry.title,
+      triggerPill: get('Trigger'),
+      actionPill: get('Handling'),
+      confidencePct: parseInt(get('Sikkerhed'), 10) || undefined,
+    })
+  }, [reviewWorkflow])
   const openActivatedWorkflow = useCallback((workflow) => {
     const wf = typeof workflow === 'string' ? { title: workflow } : (workflow || {})
     setWfWidth(sidebarOpenRef.current ? sidebarWidthRef.current : 400)
@@ -631,6 +645,7 @@ export default function App() {
           evaLog={evaLog}
           onRevertLog={revertEvaLog}
           onToggleWorkflowLog={toggleWorkflowLog}
+          onOpenWorkflowLog={openLogWorkflow}
         />
         <SideNav
           collapsed={sideNavCollapsed}

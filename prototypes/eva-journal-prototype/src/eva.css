@@ -1462,7 +1462,39 @@ td:has(.eva-suggested-cell) {
 .eva-vat-chip-to { background: #e7f6f0; color: #08795a; }
 .eva-vat-arrow { color: var(--eva-ink-3); font-size: 12px; }
 .eva-vat-item-reason { font-size: 12px; line-height: 1.45; color: var(--eva-ink-2); }
+/* Brief overview rows — one (or two) lines per suggested change */
+.eva-vat-overview { display: flex; flex-direction: column; }
+.eva-vat-row { display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-bottom: 1px solid #f1f3f6; }
+.eva-vat-row:last-child { border-bottom: none; }
+.eva-vat-row-applied { opacity: 0.6; }
+.eva-vat-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.eva-vat-row-entry { font-size: 12px; font-weight: 600; color: var(--eva-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eva-vat-row-conf { font-size: 11px; font-weight: 600; color: var(--eva-ink-3); flex: none; }
+.eva-vat-row-done { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #08795a; flex: none; }
+.eva-vat-row-done svg { width: 13px; height: 13px; }
+.eva-vat-row-change { display: flex; align-items: center; gap: 8px; }
+.eva-vat-row-field { font-size: 11px; font-weight: 600; color: var(--eva-ink-3); flex: none; }
 .eva-vat-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+
+/* VAT suggestion card — reuses the doc-reminder artefact-card chrome, laid out
+   as a column (clickable header + collapsible overview body) */
+.eva-vat-artifact { flex-direction: column; align-items: stretch; padding: 0; cursor: default; overflow: hidden; }
+.eva-vat-artifact-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.12s ease;
+}
+.eva-vat-artifact-head:hover { background: #fdf3e4; }
+.eva-vat-artifact-body { padding: 0 12px 8px; display: flex; flex-direction: column; border-top: 1px solid rgba(232, 149, 57, 0.25); margin-top: 2px; }
+.eva-vat-artifact .eva-vat-row { border-bottom-color: rgba(232, 149, 57, 0.22); }
 .eva-vat-apply {
     border: none;
     background: var(--eva-blue);
@@ -1587,6 +1619,67 @@ td:has(.eva-suggested-cell) {
     color: var(--eva-ink-3);
 }
 .eva-log-reverted-tag svg { width: 13px; height: 13px; }
+
+/* Shared action card — used by BOTH single (inline-expand) and bulk (drill-in)
+   actions so they look identical; only the chevron direction differs. */
+.eva-log-action-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    border: 1px solid #DDD; /* match the entry/page-level log card border */
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.eva-log-action-card:hover { background: #fafafa; border-color: #c9c9c9; }
+.eva-log-action-icon { flex: none; display: inline-flex; color: var(--eva-ink-3); }
+.eva-log-action-icon svg { width: 18px; height: 18px; }
+.eva-log-action-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.eva-log-action-desc { font-size: 12px; color: var(--eva-ink-3); }
+.eva-log-action-chev { flex: none; color: var(--eva-ink-3); }
+.eva-log-action-body { margin-top: 6px; }
+.eva-log-sub-actions { margin-top: 8px; }
+
+/* Drilldown sub-page — minimal header (back + title + timestamp/actor) */
+.eva-log-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--eva-blue);
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+.eva-log-back:hover { text-decoration: underline; }
+.eva-log-back svg { width: 14px; height: 14px; }
+.eva-log-drill-title { font-size: 14px; font-weight: 700; color: var(--eva-ink); }
+.eva-log-drill-meta { font-size: 12px; color: var(--eva-ink-3); margin: 2px 0 12px; }
+.eva-log-drill-foot { margin-top: 12px; }
+/* Bulk (multi-action) events drill into a sub-page — show a › chevron at the
+   right of the card to signal it navigates. List.Button renders no chevron, so
+   we add taco's own chevron glyph (rotated to point right) to match the
+   downward collapse chevrons on the single actions exactly. */
+.eva-log-bulk .log-card-wrapper [data-taco="list-item"] { position: relative; padding-right: 36px; }
+.eva-log-bulk .log-card-wrapper [data-taco="list-item"]::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    width: 24px;
+    height: 24px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.47%2010.03a.75.75%200%2001.976-1.133l.084.073L12%2013.439l4.47-4.47a.75.75%200%2001.976-.072l.084.073a.75.75%200%2001.073.976l-.073.084-5%205a.75.75%200%2001-.976.073l-.084-.073-5-5z' fill='%23595959' fill-rule='evenodd'/%3E%3C/svg%3E") center / 24px no-repeat;
+    pointer-events: none;
+}
+
 /* Workflow activate/deactivate toggle inside a workflow log action */
 .eva-log-wf-btn {
     align-self: flex-start;
